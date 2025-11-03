@@ -25,9 +25,9 @@ public class Query {
     private Map<String, List<Object>> query1(HttpServletRequest request, HttpServletResponse response) throws SQLException {
         response.setHeader("Access-Control-Allow-Oring","*");
         String equipment=request.getParameter("equipment");
-        String start =request.getParameter("start");
+        String date =request.getParameter("date");
         DB2 db =new DB2();
-        Map<String, List<Object>> json=db.AutoTime(equipment,start);
+        Map<String, List<Object>> json=db.AutoTime(equipment,date);
         db.close();
         return json;
 
@@ -38,10 +38,10 @@ public class Query {
     private Map<String,List<Object>> query2(HttpServletRequest request,HttpServletResponse response) throws SQLException {
         response.setHeader("Access-Control-Allow-Oring","*");
         String equipment =request.getParameter("equipment");
-        String start =request.getParameter("start");
+        String date =request.getParameter("date");
 
         DB2 db=new DB2();
-        Map<String,List<Object>> json=db.AutoTime1(equipment,start);
+        Map<String,List<Object>> json=db.AutoTime1(equipment,date);
         db.close();
         return json;
     }
@@ -50,10 +50,10 @@ public class Query {
     private JSONObject query3(HttpServletRequest request, HttpServletResponse response) throws SQLException {
         response.setHeader("Access-Control-Allow-Oring","*");
         String equipment =request.getParameter("equipment");
-        String start =request.getParameter("start");
-        String end = request.getParameter("end");
+        String date =request.getParameter("date");
+
         DB2 db=new DB2();
-        JSONObject json=db.AutoTime2(equipment,start);
+        JSONObject json=db.AutoTime2(equipment,date);
         db.close();
         return json;
     }

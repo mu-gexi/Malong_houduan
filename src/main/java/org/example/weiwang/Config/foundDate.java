@@ -17,7 +17,7 @@ import java.util.List;
 public class foundDate {
 
     // 定时规则：每月1日00:10执行（提前生成当月设备-日期基础记录）
-    @Scheduled(cron = "0 1 0 1 * ?")
+    @Scheduled(cron = "1 0 0 1 * ?")
     public void insertWaizuDeviceDates() {
         try {
             // 1. 生成当月所有日期（格式：yyyy-MM-dd，如2025-10-01）
@@ -73,8 +73,8 @@ public class foundDate {
     }
 
 
-
-    @Scheduled(cron = "0 */1 * * * *") // 每年1月1日凌晨1点执行
+    // 每年1月1日凌晨00:00:01点执行
+    @Scheduled(cron = "1 0 0 1 1 *")
     public void insertWaizuDeviceDatesYearly() {
         int year = LocalDate.now().getYear();
         try {
