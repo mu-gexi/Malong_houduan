@@ -12,17 +12,18 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
+//模拟登录获取最终cookie、Authorization--------------------------------------------------------------------------------------
 
 @Controller
 public class CompleteLoginClient1 {
-    private static final Logger logger = LoggerFactory.getLogger(CompleteLoginClient1.class);
-    private static final RestTemplate restTemplate = new RestTemplate();
+    private static final Logger logger = LoggerFactory.getLogger(CompleteLoginClient1.class);// 创建日志对象
+    private static final RestTemplate restTemplate = new RestTemplate();// 创建 RestTemplate 对象
 
     // Token 缓存和上次获取时间
-    private static String cachedTokenB = null;
-    private static String cachedCookie = null;
-    private static LocalDateTime lastTokenFetchTime = null;
-    private static String cachedIOCurl=null;
+    private static String cachedTokenB = null;// 缓存 tokenB
+    private static String cachedCookie = null;// 缓存 Cookie
+    private static LocalDateTime lastTokenFetchTime = null;// 上次获取 Token 的时间
+    private static String cachedIOCurl=null;//缓存iocUrl
 
     /**
      * 检查 token 是否过期
@@ -83,11 +84,11 @@ public class CompleteLoginClient1 {
         formData.add("client_secret", "h0u2a!2mo)2d");
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(loginUrl, request, Map.class);
+        ResponseEntity<Map> response = restTemplate.postForEntity(loginUrl, request, Map.class);// 发送请求并获取响应
 
-        Map data = (Map) response.getBody().get("data");
-        String tokenHead = (String) data.get("tokenHead");
-        String token = (String) data.get("token");
+        Map data = (Map) response.getBody().get("data");// 获取响应体中的 data 字段
+        String tokenHead = (String) data.get("tokenHead");// 获取 tokenHead 字段
+        String token = (String) data.get("token");// 获取 token 字段
         return tokenHead + token;
     }
 
@@ -98,23 +99,23 @@ public class CompleteLoginClient1 {
         String url2 = "https://cloud.huamod.com/admin_apis/resource/station/ioc/url"; // 第二个接口
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(MediaType.APPLICATION_JSON);// 设置请求头为 JSON 类型
         headers.set("Authorization", tokenA);
 
         Map<String, String> body = new HashMap<>();
         body.put("stationId", stationId);
 
         HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(url2, request, Map.class);
+        ResponseEntity<Map> response = restTemplate.postForEntity(url2, request, Map.class);// 发送请求并获取响应
 
-        List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
+        List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");// 获取响应体中的 data 字段
         if (data != null && !data.isEmpty()) {
-            String iocUrl = (String) data.get(0).get("url");
-            String[] pars = iocUrl.split("/");
-            String ioc = pars[2];
+            String iocUrl = (String) data.get(0).get("url");// 获取第一个元素中的 url 字段
+            String[] pars = iocUrl.split("/");// 将 url 按 / 分割
+            String ioc = pars[2];// 获取第三个元素，即 ioc 名称
             Map<String, Object> map = new HashMap<>();
-            map.put("iocUrl", "proxy_sst=" + pars[4]);
-            map.put("ioc", ioc);
+            map.put("iocUrl", "proxy_sst=" + pars[4]);// 将 iocUrl 拼接为 proxy_sst=xxx 形式
+            map.put("ioc", ioc);// 将 ioc 名称保存到 map 中
             return map;
         }
 
@@ -125,7 +126,7 @@ public class CompleteLoginClient1 {
      * 第二次账号登录接口，获取 tokenB 和 proxy_sst
      */
     public static String loginSecondAccount(String username, String password, String urlPartCookie) {
-        String loginUrl = "http://ioc-733eb65e.hi-link.huamod.com/apis/user/authentication";
+        String loginUrl = "http://ioc-733eb65e.hi-link.huamod.com/apis/user/authentication";// 第二次登录接口
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Cookie", urlPartCookie);
@@ -134,10 +135,10 @@ public class CompleteLoginClient1 {
         formData.add("username", username);
         formData.add("password", password);
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);// 创建请求对象
         ResponseEntity<Map> response = restTemplate.postForEntity(loginUrl, request, Map.class);
 
-        Map data = (Map) response.getBody().get("result");
+        Map data = (Map) response.getBody().get("result");// 获取响应体中的 result 字段
         return (String) data.get("token");
     }
 
@@ -151,14 +152,14 @@ public class CompleteLoginClient1 {
         headers.set("Cookie", proxySst);
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<String> response = restTemplate.exchange(pageUrl, HttpMethod.GET, request, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(pageUrl, HttpMethod.GET, request, String.class);// 发送请求并获取响应
 
-        List<String> setCookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+        List<String> setCookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);// 获取响应头中的 Set-Cookie 字段
         String io = null;
         if (setCookies != null) {
-            for (String c : setCookies) {
+            for (String c : setCookies) {// 遍历 Set-Cookie 字段中的每个元素
                 if (c.startsWith("io=")) {
-                    io = c.split(";", 2)[0];
+                    io = c.split(";", 2)[0];// 获取第一个分号之前的字符串，即 io 值
                     break;
                 }
             }

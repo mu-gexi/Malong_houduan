@@ -72,7 +72,7 @@ public class foundDate {
         return dateList;
     }
 
-
+    //自动创建每个表号的每年的12个月份-------------------------------------------
     // 每年1月1日凌晨00:00:01点执行
     @Scheduled(cron = "1 0 0 1 1 *")
     public void insertWaizuDeviceDatesYearly() {

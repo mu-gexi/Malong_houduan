@@ -18,7 +18,7 @@ import java.util.*;
 
 /**
  * 每日定时计算任务：
- * 按设备编号（equipmentCode）统计尖峰平谷功率、总功率及对应费用
+ * 按设备编号（equipmentCode）统计尖峰平谷及对应费用
  */
 @RestController
 public class calculate7 {

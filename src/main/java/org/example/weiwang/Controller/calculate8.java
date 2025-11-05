@@ -31,7 +31,7 @@ public class calculate8 {
     /**
      * 定时任务（可开启）
      */
-    @Scheduled(cron = "0 0 1 1 * ?") // 每月1日凌晨1点执行
+    @Scheduled(cron = "1 0 0 * * ?")
     public void calculate() {
         YearMonth currentMonth = YearMonth.now();
         run(currentMonth.toString());

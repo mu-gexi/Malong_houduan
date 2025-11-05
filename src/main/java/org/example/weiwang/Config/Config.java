@@ -1,5 +1,5 @@
 package org.example.weiwang.Config;
-
+//配置文件,计算中的设备
 public class Config {
     public static String[][] devices = {
             {"08102100002009","1#生产总电(1级)","400"},
