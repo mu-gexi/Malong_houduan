@@ -74,7 +74,7 @@ public class calculate5 {
         }
 
 
-        for (String time : grouped.keySet()) {
+        for (String time : grouped.keySet()) {//遍历时间
             List<JSONObject> list = grouped.get(time);
             double Grecharge = 0; // 光伏发电
             double Crecharge = 0; // 储能充电
