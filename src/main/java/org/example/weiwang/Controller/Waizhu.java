@@ -35,6 +35,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+//实时获取能碳数据--------------------------------------------------------------------------------------------------
+
+
 @RestController
 public class Waizhu {
 
@@ -84,6 +87,7 @@ public class Waizhu {
         }
     }
 
+    //获取能碳数据
     public static String getRung(String meterId)  {
         JSONArray powerPoint = new JSONArray();
 
@@ -102,9 +106,9 @@ public class Waizhu {
         }
 
         // 时间范围：上次处理时间 至 当前时间
-        String strStartTime = lastTime.format(DATE_TIME_FORMAT);
+        String strStartTime = lastTime.format(DATE_TIME_FORMAT);//上次处理时间
         LocalDateTime todayEnd = LocalDate.now().atStartOfDay(); // 今天00:00:00
-        String strEndTime = now.format(DATE_TIME_FORMAT);
+        String strEndTime = now.format(DATE_TIME_FORMAT);//当前时间
 
 
         // 首次处理时明确标注"首次处理从当前时间开始"，即使实际起点是当天0点
@@ -149,7 +153,7 @@ public class Waizhu {
 
                     try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                         String strResponse = EntityUtils.toString(response.getEntity(), "utf-8");
-                        JSONObject jsonResponse = JSONObject.parseObject(strResponse);
+                        JSONObject jsonResponse = JSONObject.parseObject(strResponse);//解析json
 
                         if (!jsonResponse.getString("code").equals("200")) {
                             logger.error("API返回错误: {}，响应内容: {}",
@@ -172,15 +176,15 @@ public class Waizhu {
                             continue;
                         }
 
-                        int currentPageSize = jsonRecords.size();
+                        int currentPageSize = jsonRecords.size();//当前页的数据量
                         totalRecords += currentPageSize;
                         logger.info("电表 {} 第{}页获取到 {} 条记录，累计 {} 条",
                                 meterId, page, currentPageSize, totalRecords);
 
                         for (int i = 0; i < jsonRecords.size(); i++) {
 
-                            JSONObject record = jsonRecords.getJSONObject(i);
-                            String equipmentCode = record.getString("equipmentCode");
+                            JSONObject record = jsonRecords.getJSONObject(i);//每条记录
+                            String equipmentCode = record.getString("equipmentCode");//设备编号
                             String collectTimeStr = record.getString("collectTime");
 
                             // 解析记录时间
@@ -221,7 +225,7 @@ public class Waizhu {
                                 powerPoint.add(point);
                                 dbHelper.Auto(equipmentCode, collectTimeStr, activePower, positiveActive, reverseActive, activePowerA, activePowerB, activePowerC,currentA, currentB, currentC);
 
-                                newRecords++;
+                                newRecords++;//新增记录数
 
                                 // 更新本次处理的最新记录时间
                                 if (collectTime.isAfter(latestRecordTime)) {

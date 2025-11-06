@@ -56,7 +56,7 @@ public class calculate1 {
             }
         }
 
-        for(String device :Config.bian2){
+        for(String device :Config.bian2){//遍历表计
             try {
                 // 输入昨天的起止时间
                 run1(device, yesterday.toString());
@@ -66,15 +66,15 @@ public class calculate1 {
                 logger.error("设备 {} 处理异常: {}", device, e.getMessage(), e);
             }
         }
-        lastExecutionTime = runEnd;
+        lastExecutionTime = runEnd;//更新lastExecutionTime
     }
 
     // 运行calculate方法，计算每5分钟的电量
     public void run(String devices, LocalDateTime startTime, LocalDateTime endTime) {
         DB3 db = new DB3();
-        JSONArray data = db.calculate(devices, startTime, endTime);
+        JSONArray data = db.calculate(devices, startTime, endTime);//查询数据库
         List<JSONObject> rows = new ArrayList<>();
-        for (Object obj : data)
+        for (Object obj : data) //遍历数据库
             if (obj instanceof JSONObject) rows.add((JSONObject) obj);
         if (rows.isEmpty()) {
             logger.warn("未找到设备 {} 数据", devices);
@@ -84,7 +84,7 @@ public class calculate1 {
         Map<LocalDateTime, Double> posMap = new HashMap<>();
         Map<LocalDateTime, Double> revMap = new HashMap<>();
 
-        for (JSONObject row : rows) {
+        for (JSONObject row : rows) {//遍历数据库
             LocalDateTime ct = parseToLocalDateTime(row.get("collectTime"));
             if (ct == null || ct.isBefore(startTime) || ct.isAfter(endTime)) continue;
             Double p = safeGetDouble(row, "positiveActive");
@@ -93,16 +93,16 @@ public class calculate1 {
             if (r != null) revMap.put(ct, r);
         }
 
-        fillMissing(startTime, endTime, posMap);
+        fillMissing(startTime, endTime, posMap);//补齐缺失时间点
         fillMissing(startTime, endTime, revMap);
-        replaceZerosWithNeighborAverage(posMap);
+        replaceZerosWithNeighborAverage(posMap);//0值修正
         replaceZerosWithNeighborAverage(revMap);
 
         // === 对齐所有时间并排序 ===
         Set<LocalDateTime> allTimes = new HashSet<>(posMap.keySet());//获取所有时间
         allTimes.addAll(revMap.keySet());//添加所有时间
-        List<LocalDateTime> timeList = new ArrayList<>(allTimes);
-        Collections.sort(timeList);
+        List<LocalDateTime> timeList = new ArrayList<>(allTimes);//将所有时间转换为list
+        Collections.sort(timeList);//对list进行排序
 
         List<Map.Entry<LocalDateTime, Double>> posList = posMap.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey()).toList();//获取所有时间对应的正向数据
@@ -110,18 +110,18 @@ public class calculate1 {
                 .sorted(Map.Entry.comparingByKey()).toList();
 
         for (int i = 1; i < timeList.size(); i++) {
-            LocalDateTime prevTime = timeList.get(i - 1);
-            LocalDateTime currTime = timeList.get(i);
+            LocalDateTime prevTime = timeList.get(i - 1);//获取前一个时间
+            LocalDateTime currTime = timeList.get(i);//获取当前时间
 
-            Double prevPos = posMap.getOrDefault(prevTime, 0.0);
-            Double currPos = posMap.getOrDefault(currTime, 0.0);
-            Double prevRev = revMap.getOrDefault(prevTime, 0.0);
-            Double currRev = revMap.getOrDefault(currTime, 0.0);
+            Double prevPos = posMap.getOrDefault(prevTime, 0.0);//获取前一个时间的正向数据
+            Double currPos = posMap.getOrDefault(currTime, 0.0);//获取当前时间的正向数据
+            Double prevRev = revMap.getOrDefault(prevTime, 0.0);//获取前一个时间的反向数据
+            Double currRev = revMap.getOrDefault(currTime, 0.0);//获取当前时间的反向数据
 
-            double diff = currPos >= prevPos ? currPos - prevPos : 0.0;
-            double diff1 = currRev >= prevRev ? currRev - prevRev : 0.0;
+            double diff = currPos >= prevPos ? currPos - prevPos : 0.0;//计算正向差值
+            double diff1 = currRev >= prevRev ? currRev - prevRev : 0.0;//计算反向差值
 
-            if (diff > getMaxAllowedDiff(posList, i)) {
+            if (diff > getMaxAllowedDiff(posList, i)) {//判断正向差值是否超过最大允许差值
                 logger.warn("设备 {} 时间 {} 出现异常正向差值 {}", devices, currTime, diff);
                 diff = 0.0;
             }
@@ -130,7 +130,7 @@ public class calculate1 {
                 diff1 = 0.0;
             }
 
-            if (Arrays.asList(Config.guang).contains(devices)) {
+            if (Arrays.asList(Config.guang).contains(devices)) {//判断是否为光伏类设备
                 db.deposit(devices, currTime.toString(), diff, diff1);
             } else {
                 db.deposit(devices, currTime.toString(), diff1, diff);
@@ -156,7 +156,7 @@ public class calculate1 {
         }
 
         if (count < 2) return 1000.0;
-        return Math.max((sum / count) * 3, 1000.0);
+        return Math.max((sum / count) * 3, 1000.0);//计算最大允许差值
     }
 
 
@@ -210,9 +210,9 @@ public class calculate1 {
 
                 for (int j = startIdx; j <= endIdx; j++) {
                     LocalDateTime tj = times.get(j);
-                    long posSeconds = Duration.between(tStart, tj).getSeconds();//
-                    double w = (double) posSeconds / totalSeconds;
-                    double interpolated = left + (right - left) * w;
+                    long posSeconds = Duration.between(tStart, tj).getSeconds();// 当前时间距离起始时间的秒数
+                    double w = (double) posSeconds / totalSeconds; // 当前时间距离起始时间的比例
+                    double interpolated = left + (right - left) * w; // 插值计算
                     map.put(tj, interpolated);
                 }
             } else {
@@ -246,7 +246,7 @@ public class calculate1 {
     // 获取最后一个有效值（不包括0）
     private Double getLastValidValue(LocalDateTime t, Map<LocalDateTime, Double> map) {
         List<LocalDateTime> keys = new ArrayList<>(map.keySet());
-        keys.sort(Comparator.naturalOrder());
+        keys.sort(Comparator.naturalOrder());//排序
 
         for (int i = keys.size() - 1; i >= 0; i--) {
             LocalDateTime key = keys.get(i);
@@ -260,10 +260,10 @@ public class calculate1 {
         return 0.0;  // 如果没有找到，返回0作为最后的备选
     }
 
-    /** 插值计算 */
+    /** 对缺失的点进行差值计算 */
     private Double interpolateMissingValue(LocalDateTime m, Map<LocalDateTime, Double> map) {
         List<LocalDateTime> keys = new ArrayList<>();
-        for (Map.Entry<LocalDateTime, Double> e : map.entrySet()) {
+        for (Map.Entry<LocalDateTime, Double> e : map.entrySet()) {//遍历map
             Double v = e.getValue();
             if (v != null && !Double.isNaN(v) && v >= 0.0) {  // 只考虑非负值
                 keys.add(e.getKey());
@@ -273,11 +273,11 @@ public class calculate1 {
             return getLastValidValue(m, map);  // 使用最后有效值而非0
         }
 
-        keys.sort(Comparator.naturalOrder());
+        keys.sort(Comparator.naturalOrder()); // 排序
 
         for (int i = 0; i < keys.size() - 1; i++) {
-            LocalDateTime a = keys.get(i);
-            LocalDateTime b = keys.get(i + 1);
+            LocalDateTime a = keys.get(i); // 前一个时间点
+            LocalDateTime b = keys.get(i + 1); // 后一个时间点
             if (m.isAfter(a) && m.isBefore(b)) {
                 double v1 = map.get(a);
                 double v2 = map.get(b);
@@ -290,7 +290,7 @@ public class calculate1 {
                 long tot = Duration.between(a, b).getSeconds();
                 if (tot == 0) return v1;
 
-                double w = (double) Duration.between(a, m).getSeconds() / tot;//
+                double w = (double) Duration.between(a, m).getSeconds() / tot;
                 double result = v1 + (v2 - v1) * w;
                 return Math.max(result, 0.0);  // 确保结果非负
             }
@@ -311,11 +311,11 @@ public class calculate1 {
             }
         }
 
-        Double vBefore = before == null ? null : map.get(before);
+        Double vBefore = before == null ? null : map.get(before); //判断before是否为空，不为空则获取before对应的值
         Double vAfter  = after  == null ? null : map.get(after);
 
         Double result = null;
-        if (vBefore != null && !Double.isNaN(vBefore) && vAfter != null && !Double.isNaN(vAfter)) {
+        if (vBefore != null && !Double.isNaN(vBefore) && vAfter != null && !Double.isNaN(vAfter)) {//判断vBefore和vAfter是否为空，不为空则获取vBefore和vAfter的值
             result = (vBefore + vAfter) / 2.0;
         } else if (vBefore != null && !Double.isNaN(vBefore)) {
             result = vBefore;
@@ -361,7 +361,7 @@ public class calculate1 {
         return t.withMinute(aligned).withSecond(0).withNano(0);
     }
 
-    //以下为对变压器数据计算------------------------------------------------------------------------
+    //对对变压器数据计算------------------------------------------------------------------------
     public void run1(String devices,String yesterday){
         DB3 db3=new DB3();
         JSONArray data=db3.calculate3(devices,yesterday);
@@ -375,12 +375,12 @@ public class calculate1 {
         for(JSONObject row:list){
             String equipmentCode=row.getString("equipmentCode");
             String collectTime=row.getString("collectTime");
-            double recharge=row.getDouble("activePower")/12;
+            double recharge=row.getDouble("activePower")/12;//计算下网电量
             db3.deposit3(equipmentCode,collectTime,recharge);
         }
     }
 
-    //对历史数据进行5分钟差值计算----------------------------------------------
+    //对能碳历史数据进行5分钟差值计算（表time5m)----------------------------------------------
     @GetMapping("/historyAll")
     public String manualCalculateRange(@RequestParam String start, @RequestParam String end) {
         try {
@@ -398,9 +398,9 @@ public class calculate1 {
                 // 光伏类设备计算
                 for (String device : Config.mixed) {
                     try {
-                        LocalDate targetDate = LocalDate.parse(dateStr);
-                        LocalDateTime startTime = targetDate.atStartOfDay();
-                        LocalDateTime endTime = targetDate.plusDays(1).atStartOfDay().minusSeconds(1);
+                        LocalDate targetDate = LocalDate.parse(dateStr);//获取日期
+                        LocalDateTime startTime = targetDate.atStartOfDay();//获取日期的00:00:00
+                        LocalDateTime endTime = targetDate.plusDays(1).atStartOfDay().minusSeconds(1);//获取日期的23:59:59
                         run(device, startTime, endTime);
                         logger.info("设备 {} 光伏计算完成，日期 {}", device, dateStr);
                     } catch (Exception e) {
@@ -417,6 +417,7 @@ public class calculate1 {
         }
     }
 
+    //对除变压器历史数据进行5分钟差值计算（表ioc）----------------------------------------------
     @GetMapping("/historyAll1")
     public String manualCalculateRange1(@RequestParam String start, @RequestParam String end) {
         try {
@@ -450,6 +451,7 @@ public class calculate1 {
 
 
 
+    //对变压器历史数据进行5分钟差值计算（表ioc）----------------------------------------------
     public void run2(String devices, String date) {
         DB3 db3 = new DB3();
         try {

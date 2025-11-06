@@ -20,7 +20,7 @@ public class calculate2 {
 
     @Scheduled(cron="0 10 0 * * *")
     public void calculate2(){
-        for(String devices: Config.calculate){
+        for(String devices: Config.calculate){//表号遍历
             run(devices);
         }
     }
@@ -58,12 +58,12 @@ public class calculate2 {
 //            factors.add(new TimeRangeFactor(LocalTime.of(17,0), LocalTime.of(19, 0), 1.18246875));
 //            factors.add(new TimeRangeFactor(LocalTime.of(17,0), LocalTime.of(23, 59),  0.70696875));
 
-            factors.add(new TimeRangeFactor(LocalTime.of(0, 0), LocalTime.of(8, 0),  0.28576875));
-            factors.add(new TimeRangeFactor(LocalTime.of(8, 0), LocalTime.of(10, 0),  0.70676875));
-            factors.add(new TimeRangeFactor(LocalTime.of(10, 0), LocalTime.of(12, 0),  1.18216875));
-            factors.add(new TimeRangeFactor(LocalTime.of(12, 0), LocalTime.of(14, 0),  0.70676875));
-            factors.add(new TimeRangeFactor(LocalTime.of(14, 0), LocalTime.of(19, 0),  1.18216875));
-            factors.add(new TimeRangeFactor(LocalTime.of(19, 0), LocalTime.of(23, 59),  0.70676875));
+            factors.add(new TimeRangeFactor(LocalTime.of(0, 0), LocalTime.of(8, 0),  0.28576875));//谷
+            factors.add(new TimeRangeFactor(LocalTime.of(8, 0), LocalTime.of(10, 0),  0.70676875));//平
+            factors.add(new TimeRangeFactor(LocalTime.of(10, 0), LocalTime.of(12, 0),  1.18216875));//峰
+            factors.add(new TimeRangeFactor(LocalTime.of(12, 0), LocalTime.of(14, 0),  0.70676875));//平
+            factors.add(new TimeRangeFactor(LocalTime.of(14, 0), LocalTime.of(19, 0),  1.18216875));//峰
+            factors.add(new TimeRangeFactor(LocalTime.of(19, 0), LocalTime.of(23, 59),  0.70676875));//平
 
 
 
@@ -80,8 +80,8 @@ public class calculate2 {
                 Double recharge = row.getDouble("recharge");
                 Double disrecharge = row.getDouble("disrecharge");
 
-                LocalTime time = LocalDateTime.parse(collectTime, fmt).toLocalTime();
-                double factor = 1.0;
+                LocalTime time = LocalDateTime.parse(collectTime, fmt).toLocalTime();//时间
+                double factor = 1.0;//电价
                 double earnings = 0.0;//收益
                 double cost = 0.0;//成本
                 double energy = 0.0;//上网电量
@@ -89,9 +89,9 @@ public class calculate2 {
 
                 DeviceStats stats = statsMap.computeIfAbsent(equipmentCode, k -> new DeviceStats());
 
-                for (TimeRangeFactor f : factors) {
-                    if (!time.isBefore(f.start) && time.isBefore(f.end)) {
-                        factor = f.factor;
+                for (TimeRangeFactor f : factors) {//时间段遍历
+                    if (!time.isBefore(f.start) && time.isBefore(f.end)) {//判断时间是否在时间段内
+                        factor = f.factor;//此时时间段电价
 
                         // 光伏设备：不计算放电
                         if (Arrays.asList(Config.guang).contains(equipmentCode)) {
@@ -107,7 +107,7 @@ public class calculate2 {
                         }
 
 
-                        // 公共计算（无论设备类型，只计算一次）
+                        // 电量、电费累计
                         earnings = recharge * factor;
                         cost = disrecharge * factor;
 
@@ -145,6 +145,7 @@ public class calculate2 {
         }
     }
 
+    //时间段定义类
     private static class TimeRangeFactor {
         LocalTime start;
         LocalTime end;
@@ -155,6 +156,7 @@ public class calculate2 {
             this.factor = f;
         }
     }
+    //统计汇总结构体
     private static class DeviceStats {
         double value1Sum = 0.0;
         double value2Sum = 0.0;
@@ -165,6 +167,7 @@ public class calculate2 {
     }
 
 
+    //手动计算历史数据
     @GetMapping("/historyCount")
     public String manualCalculate(@RequestParam String start, @RequestParam String end) {
         try {
@@ -176,7 +179,7 @@ public class calculate2 {
             }
 
 
-            for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) { // 逐天处理
                 for (String device : Config.calculate) {
                     LocalDateTime dayStart = date.atStartOfDay();             // 当天 00:00:00
                     LocalDateTime dayEnd = date.atTime(23, 59, 59);           // 当天 23:59:59

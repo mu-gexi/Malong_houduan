@@ -28,6 +28,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+//实时获取微电网数据--------------------------------------------------------------------------------------------------
+
 @RestController
 public class IOC1 {
 
@@ -74,7 +76,6 @@ public class IOC1 {
                 logger.error("定时处理设备组（表号：{}）数据失败", safeEquipmentCode, e);
             }
         }
-        run();//获取预测光伏和预测负荷的数据
     }
 
     // ------------------------------
@@ -168,19 +169,19 @@ public class IOC1 {
     }
 
     // ------------------------------
-    // 获取API数据（复用原有逻辑）
+    // 获取API数据(如果是第一次运行此程序，获取当天0点到当前时间的数据，之后获取实时数据）
     // ------------------------------
     public String getPointData(String point, String date) {
-        LocalDate targetDate = LocalDate.parse(date, DATE_FORMAT);
-        LocalDateTime timeStart = LocalDateTime.of(targetDate, LocalTime.MIN);
-        LocalDateTime timeEnd = LocalDateTime.of(targetDate, LocalTime.MAX);
+        LocalDate targetDate = LocalDate.parse(date, DATE_FORMAT);// 目标日期
+        LocalDateTime timeStart = LocalDateTime.of(targetDate, LocalTime.MIN);// 当天00:00:00
+        LocalDateTime timeEnd = LocalDateTime.of(targetDate, LocalTime.MAX);// 当天23:59:59
 
-        if (targetDate.isEqual(LocalDate.now())) {
+        if (targetDate.isEqual(LocalDate.now())) {// 如果是当天，则获取当前时间
             timeEnd = LocalDateTime.now();
         }
 
-        boolean isFirstProcess = !lastProcessedTimeMap.containsKey(point);
-        LocalDateTime lastTime = lastProcessedTimeMap.getOrDefault(point, timeStart);
+        boolean isFirstProcess = !lastProcessedTimeMap.containsKey(point);// 是否首次处理
+        LocalDateTime lastTime = lastProcessedTimeMap.getOrDefault(point, timeStart);// 上次处理时间
 
         if (lastTime.toLocalDate().isBefore(targetDate)) {
             lastTime = timeStart;
@@ -194,8 +195,8 @@ public class IOC1 {
                 point, startTime, endTime, isFirstProcess ? "(首次处理)" : "");
 
         // 认证与请求逻辑（复用原有代码）
-        CompleteLoginClient1 loginClient = new CompleteLoginClient1();
-        Map<String,Object> tokenInfo = loginClient.token();
+        CompleteLoginClient1 loginClient = new CompleteLoginClient1();//声明CompleteLoginClient1
+        Map<String,Object> tokenInfo = loginClient.token();//调用token方法
 //        if(lastTokenFetchTime.isBefore(LocalDateTime.now().minusMinutes(60)) ||
 //          lastTokenFetchTime.equals(LocalDateTime.MIN)){//获取token
 //            tokenInfo =loginClient.token();
@@ -203,12 +204,12 @@ public class IOC1 {
 //        }else {
 ////        tokenInfo = loginClient.token();
 //        }
-        String authorization = tokenInfo.get("tokenB").toString();
-        String cookie = tokenInfo.get("Cookie").toString();
+        String authorization = tokenInfo.get("tokenB").toString();//获取tokenB
+        String cookie = tokenInfo.get("Cookie").toString();//获取cookie
 
         String apiUrl = "http://ioc-f9374957.hi-link.huamod.com/apis/interface/query/dev/point/data";
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);//设置请求头
         headers.set("Authorization", "huamod" + authorization);
         headers.set("Cookie", cookie);
 
@@ -219,9 +220,9 @@ public class IOC1 {
 
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
         ResponseEntity<String> response = restTemplate.exchange(
-                apiUrl, HttpMethod.POST, requestEntity, String.class);
+                apiUrl, HttpMethod.POST, requestEntity, String.class);//发送请求
 
-        if (response.getStatusCode() != HttpStatus.OK) {
+        if (response.getStatusCode() != HttpStatus.OK) {//判断请求状态
             throw new RuntimeException("API请求失败，状态码：" + response.getStatusCodeValue());
         }
 
@@ -241,39 +242,39 @@ public class IOC1 {
 
         DB1 dbHelper = new DB1();
         try {
-            JSONObject responseJson = JSONObject.parseObject(apiResult);
+            JSONObject responseJson = JSONObject.parseObject(apiResult);//解析json
 //            if (!"success".equals(responseJson.getString("status"))) {
 //                logger.error("设备点 {} API返回失败：{}", point, responseJson.getString("message"));
 //                return;
 //            }
 
-            JSONObject result = responseJson.getJSONObject("result");
+            JSONObject result = responseJson.getJSONObject("result");//获取result
             if (result == null) {
                 logger.warn("设备点 {} 无result数据", point);
                 return;
             }
 
-            JSONArray timeArray = result.getJSONArray("x_axis");
-            JSONArray valueArray = result.getJSONArray("point_data");
+            JSONArray timeArray = result.getJSONArray("x_axis");//获取时间数组
+            JSONArray valueArray = result.getJSONArray("point_data");//获取功率数组
 //            if(timeArray==null||valueArray==null||timeArray.size()!= valueArray.size()){
 //                logger.error("此设备点{}无数据",point);
 //            }
 
-            if (timeArray == null || valueArray == null || timeArray.size() != valueArray.size()) {
+            if (timeArray == null || valueArray == null || timeArray.size() != valueArray.size()) {//判断数组长度是否相等
                 logger.error("设备点 {} 数组格式错误：时间{}，数值{}",
                         point, timeArray.size(), valueArray.size());
                 return;
             }
 
             LocalDateTime lastTime = lastProcessedTimeMap.getOrDefault(
-                    point, LocalDateTime.of(LocalDate.now(), LocalTime.MIN));
+                    point, LocalDateTime.of(LocalDate.now(), LocalTime.MIN));//获取上次处理时间
             LocalDateTime latestRecordTime = lastTime;
 
             for (int i = 0; i < timeArray.size(); i++) {
                 try {
                     String collectTime = timeArray.getString(i);
                     double powerValue = Double.parseDouble(valueArray.getString(i));
-                    //
+
                     LocalDateTime dataTime = LocalDateTime.parse(collectTime, DATE_TIME_FORMAT);
                     //只处理当天的到现在数据，且在上次处理的时间之后插入最新记录
                     if (dataTime.toLocalDate().isEqual(LocalDate.now()) && dataTime.isAfter(lastTime)) {
@@ -302,9 +303,6 @@ public class IOC1 {
         }
     }
 
-    public void run(){
-
-    }
 
 
 
@@ -335,13 +333,14 @@ public class IOC1 {
         }
     }
 
+
     private void process(String point, String equipmentCode, String targetField) {
         try {
             if(point==null||point.isEmpty()){
                 logger.error("设备点为空");
                 return;
             };
-            String apiResult = getPoint(point);
+            String apiResult = getPoint(point);//获取api数据
             if (apiResult != null && !apiResult.isEmpty()) {
                 // 传入 start 和 end
                 processAnd(point, equipmentCode, apiResult, targetField);
@@ -354,20 +353,20 @@ public class IOC1 {
     }
 
 
-    public String getPoint(String point) throws ParseException {
+    public String getPoint(String point)  {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        LocalDate startDate = LocalDate.of(2025, 11, 02);
-        LocalDate endDate   = LocalDate.of(2025, 11, 02);
+        LocalDate startDate = LocalDate.of(2025, 11, 02);//开始日期
+        LocalDate endDate   = LocalDate.of(2025, 11, 02);//结束日期
 
         String strStartTime = startDate.atStartOfDay().format(dtf);
         // 结束日 23:59:59
         String strEndTime   = endDate.atTime(LocalTime.MAX).format(dtf);
 
-        CompleteLoginClient1 loginClient = new CompleteLoginClient1();
-        Map<String, Object> tokenInfo   = loginClient.token();
-        String authorization = tokenInfo.get("tokenB").toString();
-        String cookie        = tokenInfo.get("Cookie").toString();
+        CompleteLoginClient1 loginClient = new CompleteLoginClient1();//声明CompleteLoginClient1
+        Map<String, Object> tokenInfo   = loginClient.token();//调用token方法
+        String authorization = tokenInfo.get("tokenB").toString();//获取tokenB
+        String cookie        = tokenInfo.get("Cookie").toString();//获取cookie
 
         String apiUrl = "http://ioc-f9374957.hi-link.huamod.com/apis/interface/query/dev/point/data";
         HttpHeaders headers = new HttpHeaders();
@@ -380,8 +379,8 @@ public class IOC1 {
         formData.add("start_time", strStartTime);
         formData.add("end_time", strEndTime);
 
-        HttpEntity<MultiValueMap<String, String>> req = new HttpEntity<>(formData, headers);
-        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, req, String.class);
+        HttpEntity<MultiValueMap<String, String>> req = new HttpEntity<>(formData, headers);//请求体
+        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, req, String.class);//发送请求,获取数据
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new RuntimeException("API请求失败，状态码：" + response.getStatusCodeValue());
@@ -389,6 +388,7 @@ public class IOC1 {
         return response.getBody() == null ? "{}" : response.getBody();
     }
 
+    // 解析并保存数据（根据目标字段动态插入）
     private void processAnd(String point, String equipmentCode, String apiResult, String targetField) {
         DB1 dbHelper = new DB1();
         try {
@@ -411,7 +411,7 @@ public class IOC1 {
                 try {
                     String collectTime = timeArray.getString(i);
                     double powerValue  = Double.parseDouble(valueArray.getString(i));
-                    // ✅ 格式化两位小数
+                    //  格式化两位小数
                     double rounded     = Math.round(powerValue * 100.0) / 100.0;
                     dbHelper.saveOrUpdatePowerData(equipmentCode, collectTime, rounded, targetField);
                 } catch (Exception e) {

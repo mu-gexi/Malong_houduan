@@ -36,6 +36,7 @@ public class calculate3 {
         run(yesterdayStart, yesterdayEnd);
     }
 
+    // 手动计算历史日期数据
     @GetMapping("/calculate3/history")
     public void calculateHistory(@RequestParam String start, @RequestParam String end) {
         // 定义日期格式化器（仅日期）
@@ -117,16 +118,16 @@ public class calculate3 {
 
                             // 按类型归类
                             DeviceStats stats;
-                            if (Arrays.asList(Config.guang).contains(equipmentCode)) stats = guangStats;
-                            else if (Arrays.asList(Config.chuneng).contains(equipmentCode)) stats = chuStats;
-                            else if (Arrays.asList(Config.bian2).contains(equipmentCode)) stats = bianStats;
+                            if (Arrays.asList(Config.guang).contains(equipmentCode)) stats = guangStats;// 光伏
+                            else if (Arrays.asList(Config.chuneng).contains(equipmentCode)) stats = chuStats;// 储能
+                            else if (Arrays.asList(Config.bian2).contains(equipmentCode)) stats = bianStats;//市电
                             else continue;
 
                             // 累加总量
-                            stats.recharge += recharge;
-                            stats.disrecharge += disrecharge;
-                            stats.earnings += earnings;
-                            stats.cost += cost;
+                            stats.recharge += recharge;// 充电量
+                            stats.disrecharge += disrecharge;// 放电量
+                            stats.earnings += earnings;// 收益
+                            stats.cost += cost;// 成本
 
                             // 尖峰平谷电量累计（充电量）
                             switch (f.type) {

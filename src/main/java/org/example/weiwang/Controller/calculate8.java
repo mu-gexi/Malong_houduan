@@ -54,17 +54,17 @@ public class calculate8 {
                     continue;
                 }
 
-                double sharpPeakPowerSum = 0.0;
-                double peakPowerSum = 0.0;
-                double flatPowerSum = 0.0;
-                double valleyPowerSum = 0.0;
-                double totalPowerSum = 0.0;
+                double sharpPeakPowerSum = 0.0;//累计尖电量
+                double peakPowerSum = 0.0;//累计峰电量
+                double flatPowerSum = 0.0;//累计平电量
+                double valleyPowerSum = 0.0;//累计谷电量
+                double totalPowerSum = 0.0;//累计总电量
 
-                double sharpPeakCostSum = 0.0;
-                double peakCostSum = 0.0;
-                double flatCostSum = 0.0;
-                double valleyCostSum = 0.0;
-                double totalCostSum = 0.0;
+                double sharpPeakCostSum = 0.0;//累计尖电费
+                double peakCostSum = 0.0;//累计峰电费
+                double flatCostSum = 0.0;//累计平电费
+                double valleyCostSum = 0.0;//累计谷电费
+                double totalCostSum = 0.0;//累计总电费
 
                 // 遍历所有记录累加
                 for (int i = 0; i < data.size(); i++) {

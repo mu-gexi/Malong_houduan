@@ -35,6 +35,7 @@ public class calculate5 {
         run(yesterdayStart, yesterdayEnd);
     }
 
+    // 手动计算历史日期数据
     @GetMapping("/calculate5/history")
     public void calculateHistory(@RequestParam String start, @RequestParam String end) {
 //          LocalDate date = LocalDate.parse(dateStr);
@@ -61,6 +62,7 @@ public class calculate5 {
     }
 
 
+    // 计算负载
     public void run(LocalDateTime start, LocalDateTime end) {
         DB4 db = new DB4();
         JSONArray data = db.queryLoad(start.toString(),end.toString());
@@ -85,13 +87,13 @@ public class calculate5 {
                 String code = obj.getString("equipmentCode");
 
                 if(Arrays.asList(Config.zhujian1).contains(code)){
-                    if(code.equals("08102100002956"))
+                    if(code.equals("08102100002956"))//光伏发电
                       Grecharge += obj.getDoubleValue("recharge");
-                    if(code.equals("08102100002922")) {
-                        Crecharge += obj.getDoubleValue("recharge");
-                        Cdisrecharge += obj.getDoubleValue("disrecharge");
+                    if(code.equals("08102100002922")) {//储能
+                        Crecharge += obj.getDoubleValue("recharge");//放电
+                        Cdisrecharge += obj.getDoubleValue("disrecharge");//充电
                     }
-                    if(code.equals("000000001")) {
+                    if(code.equals("000000001")) {//变压器下网
                         Bdisrecharge += obj.getDoubleValue("disrecharge");
                         if (Bdisrecharge < 0) {
                             Bdisrecharge = 0;
